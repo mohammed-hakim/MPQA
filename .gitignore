@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+runs/
+*.pth
+*.pt
+*.tmp
+test_clean.csv
+.env
+.venv/

@@ -1,0 +1,37 @@
+# Every hyperparameter lives here. Override on the command line:  --set epochs=2 --set data_dir=/my/data
+# Notes on each value vs the paper are in docs/DEVIATIONS.md
+
+# --- data ---------------------------------------------------------------
+data_dir: /kaggle/input/datasets/hakimdev/mriqp4/LabelMRI4   # folder with the CSVs and the image folder
+img_dir: noisedImages                                         # degraded images, inside data_dir
+orig_dir: originalImages                                      # clean originals (only the full-reference baselines use them)
+train_csv: Labeled_data_train.csv                             # relative to data_dir, or an absolute path
+test_csv: Labeled_data_test.csv
+val_frac: 0.2                  # paper: 4:1 train/val; split BY SUBJECT so no subject is in both
+subset: 1.0                    # fraction of the training pairs to use (1.0 = all; lower only for debugging)
+drop_shared_subjects: false    # true: remove from the test set any subject that also appears in the train CSV
+img_size: 384
+workers: 4                     # data-loader processes
+
+# --- model --------------------------------------------------------------
+arch: vit_base_patch16_384     # any timm backbone name
+pretrained: true               # ImageNet weights (downloaded by timm on first use)
+act: gelu                      # activation in both heads: gelu | relu   (the authors' code uses relu)
+head_drop: 0.0                 # dropout in both heads                    (the authors' code uses 0.5)
+
+# --- optimisation (paper: SGD, fixed lr, momentum 0.9, weight decay 1e-4) --
+epochs: 40                     # paper: 100
+batch_size: 8                  # pairs per step (= 16 images); paper: 32
+lr: 5.0e-4
+momentum: 0.9
+wd: 1.0e-4
+eps: 0.1                       # margin of the ranking loss / tie threshold when predicting
+lam: 4.0                       # weight of the OVERALL term in the ranking loss (paper's best)
+amp: true                      # fp16 autocast on CUDA; the loss itself is always computed in fp32
+multi_gpu: true                # DataParallel over all visible GPUs (checkpoints stay single-GPU compatible)
+seed: 42
+
+# --- run management ------------------------------------------------------
+out_dir: runs/default          # checkpoints (best.pth, last.pth) and history.csv go here
+save_checkpoints: true         # false for smoke tests: nothing is written
+resume_from: null              # path to a last.pth; default: continue from out_dir/last.pth if it exists
