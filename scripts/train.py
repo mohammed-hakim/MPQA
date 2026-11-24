@@ -23,8 +23,8 @@ def main():
     fit(cfg)
     best = Path(cfg.out_dir) / "best.pth"
     if cfg.save_checkpoints and best.exists() and not args.no_test:
-        _, acc, acc_all = evaluate_checkpoint(cfg, best)
-        print_report(acc, acc_all, title="TEST")
+        _, acc = evaluate_checkpoint(cfg, best)
+        print_report(acc, title="TEST")
 
 
 if __name__ == "__main__":

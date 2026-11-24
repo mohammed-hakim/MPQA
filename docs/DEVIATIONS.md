@@ -14,7 +14,7 @@ repository (github.com/bymianbao/MPQA).
 | Batch size | 32 | 8 pairs (= 16 images) | 32 pairs (64 images at 384 px) does not fit a T4. |
 | Precision | not stated | fp16 autocast on CUDA, loss in fp32 | Speed. |
 | Input normalisation | not stated | mean 0.5 / std 0.5 | What the pretrained timm ViT expects. The released code skips it. |
-| Accuracy metric | "overall accuracy" | accuracy on pairs with an expert preference (label != 0), by the sign of the score difference | **Inferred**: the paper's PSNR value (67.01) equals correct / non-tied pairs on our test split. No evaluation code is released. The tie-aware accuracy is reported as a second number. |
+| Accuracy metric | "overall accuracy" | accuracy on pairs with an expert preference (label != 0), by the sign of the score difference | **Inferred**: the paper's PSNR value (67.01) equals correct / non-tied pairs on our test split. No evaluation code is released. |
 | Dimension labels per degradation | not specified | noise to SNR; contrast to contrast; crop to resolution; motion and herringbone to artifacts; masking to resolution + artifacts; denoise to SNR + resolution | Copied from the released code; only used as a training target, never as a model input. |
 | Train/test split | random 4:1 | the CSVs shipped with the Kaggle copy of MRIQP; train/val split by subject | One subject appears in both CSVs (no shared scan or image file). `drop_shared_subjects=true` removes it from the test set. |
 | Label order | overall first in Eq. 3, indexed as the 5th element in Eq. 7 | overall last everywhere | No effect on results. |

@@ -53,23 +53,25 @@ def _forward(model, img1, img2, device, amp):
 
 @torch.no_grad()
 def evaluate(model, loader, device, cfg):
-    """-> (loss, acc_pref, acc_all); the accuracies are dicts over DIMS in %, see mpqa.metrics."""
+    """-> (loss, acc_pref); acc_pref is a dictionary over DIMS in %."""
     model.eval()
     amp = cfg.amp and device.type == "cuda"
-    ok_pref, n_pref, ok_all, n, loss_sum = torch.zeros(5), torch.zeros(5), torch.zeros(5), 0, 0.0
+    ok_pref, n_pref, loss_sum = torch.zeros(5), torch.zeros(5), 0.0
+    n = 0
     for batch in loader:
         img1, img2, imp1, imp2, y = [t.to(device, non_blocking=True) for t in batch]
         o1, o2 = _forward(model, img1, img2, device, amp)
         loss, yh1, yh2 = jq_loss(o1, o2, imp1, imp2, y, cfg.eps, cfg.lam)
-        a, b, c, m = pair_counts(yh1 - yh2, y, cfg.eps)
-        ok_pref += a.cpu(); n_pref += b.cpu(); ok_all += c.cpu(); n += m; loss_sum += loss.item() * m
+        a, b = pair_counts(yh1 - yh2, y, cfg.eps)
+        ok_pref += a.cpu(); n_pref += b.cpu(); n += y.size(0); loss_sum += loss.item() * y.size(0)
     pct = lambda ok, total: dict(zip(DIMS, (ok / total * 100).tolist()))
-    return loss_sum / n, pct(ok_pref, n_pref.clamp(min=1)), pct(ok_all, n)
+    acc_pref = pct(ok_pref, n_pref.clamp(min=1))
+    return loss_sum / n, acc_pref
 
 
 def _write_history(history, path):
     rows = [{"epoch": h["epoch"], "train_loss": h["train_loss"], "val_loss": h["val_loss"],
-             **{f"val_{k}": v for k, v in h["val"].items()}, "val_all_Overall": h["val_all"]["Overall"]}
+             **{f"val_{k}": v for k, v in h["val"].items()}}
             for h in history]
     pd.DataFrame(rows).to_csv(path, index=False)
 
@@ -121,11 +123,10 @@ def fit(cfg):
             scaler.step(opt); scaler.update()
             run += loss.item()
         train_loss = run / len(train_loader)
-        val_loss, acc, acc_all = evaluate(model, val_loader, device, cfg)
+        val_loss, acc = evaluate(model, val_loader, device, cfg)
         log(f"epoch {epoch:3d} | train {train_loss:.4f} | val {val_loss:.4f} | " +
-            " ".join(f"{k}:{v:.1f}" for k, v in acc.items()) +
-            f" | overall(all pairs, ties scored): {acc_all['Overall']:.1f}")
-        history.append(dict(epoch=epoch, train_loss=train_loss, val_loss=val_loss, val=acc, val_all=acc_all))
+            " ".join(f"{k}:{v:.1f}" for k, v in acc.items()))
+        history.append(dict(epoch=epoch, train_loss=train_loss, val_loss=val_loss, val=acc))
         if acc["Overall"] > best_acc:
             best_acc = acc["Overall"]
             if cfg.save_checkpoints:
@@ -141,7 +142,7 @@ def fit(cfg):
 
 
 def evaluate_checkpoint(cfg, ckpt, df=None):
-    """Evaluate a saved checkpoint on `df` (default: the test set). -> (loss, acc_pref, acc_all)."""
+    """Evaluate a saved checkpoint on `df` (default: the test set). -> (loss, acc_pref)."""
     device = get_device()
     core, model = build_model(cfg, device, pretrained=False)      # weights come from the checkpoint: no download
     load_weights(core, ckpt, device)
@@ -151,7 +152,6 @@ def evaluate_checkpoint(cfg, ckpt, df=None):
     return evaluate(model, loader, device, cfg)
 
 
-def print_report(acc, acc_all, title="TEST"):
+def print_report(acc, title="TEST"):
     log(f"\n{title} accuracy on non-tied pairs (%, the paper-style metric):", {k: round(v, 2) for k, v in acc.items()})
-    log(f"{title} accuracy on all pairs incl. ties (%):                    ", {k: round(v, 2) for k, v in acc_all.items()})
     log("paper (Table 2/3): " + " | ".join(f"{k} {v}" for k, v in PAPER_TEST.items()))

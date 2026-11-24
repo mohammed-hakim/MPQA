@@ -26,9 +26,9 @@ def test_evaluate_checkpoint_from_best_and_last(tiny_cfg):
     fit(tiny_cfg)
     out = pathlib_out(tiny_cfg)
     for name in ("best.pth", "last.pth"):                     # both checkpoint formats load
-        loss, acc, acc_all = evaluate_checkpoint(tiny_cfg, out / name)
-        assert loss > 0 and set(acc) == set(DIMS) == set(acc_all)
-        assert all(0 <= v <= 100 for v in acc.values()) and all(0 <= v <= 100 for v in acc_all.values())
+        loss, acc = evaluate_checkpoint(tiny_cfg, out / name)
+        assert loss > 0 and set(acc) == set(DIMS)
+        assert all(0 <= v <= 100 for v in acc.values())
 
 
 def test_nothing_is_written_when_checkpoints_are_off(tiny_cfg):

@@ -24,8 +24,8 @@ def main():
 
     _, val, test = load_frames(cfg)
     ckpt = args.ckpt or str(Path(cfg.out_dir) / "best.pth")
-    _, acc, acc_all = evaluate_checkpoint(cfg, ckpt, df=test if args.split == "test" else val)
-    print_report(acc, acc_all, title=args.split.upper())
+    _, acc = evaluate_checkpoint(cfg, ckpt, df=test if args.split == "test" else val)
+    print_report(acc, title=args.split.upper())
 
 
 if __name__ == "__main__":

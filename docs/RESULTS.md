@@ -16,9 +16,6 @@ Test set = the Kaggle `Labeled_data_test.csv` (2,086 pairs, 1,761 with a prefere
 | Resolution | 82.43 | 84.32 |
 | Artifacts | 82.42 | 86.58 |
 
-Same predictions scored on **all** pairs, with "equal" predicted when |score difference| <= 0.1: Overall 48.5,
-SNR 65.3, Contrast 77.1, Resolution 63.8, Artifacts 61.3. The model rarely predicts ties; this is a known weakness.
-
 Checkpoint selected on validation (best Overall 88.04, within these 10 epochs), so the validation-test gap (about
 1.2 points) is the usual selection optimism. The paper trains for 100 epochs; longer schedules have not been run. Caveats: the metric is inferred, the split is Kaggle's (one subject in both CSVs, no shared scan
 or image file), and the paper's own pipeline differs in several ways (`docs/DEVIATIONS.md`).
