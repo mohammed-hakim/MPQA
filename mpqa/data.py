@@ -63,7 +63,7 @@ def load_frames(cfg, verbose=True):
     if verbose:
         print(f"pairs  train={len(train)}  val={len(val)}  test={len(test)}", flush=True)
         if not cfg.drop_shared_subjects:
-            print(f"subjects shared by train-csv and test-csv: {len(shared)} (0 = no leakage)", flush=True)
+            print(f"subject IDs shared by train-csv and test-csv: {len(shared)} (not a scan/file leakage check)", flush=True)
     return train, val, test
 
 

@@ -2,10 +2,20 @@ import numpy as np
 import pandas as pd
 import pytest
 
-pytest.importorskip("sklearn")
-
 from mpqa.analysis import leakage_report, metadata_baseline, tag_features  # noqa: E402
-from mpqa.labels import TAGS  # noqa: E402
+from mpqa.labels import ORIG_COL, TAGS, subject_of  # noqa: E402
+
+
+def test_leakage_report_distinguishes_subject_from_scan_overlap(synthetic):
+    train = pd.read_csv(synthetic / "train.csv", header=None)
+    test = pd.read_csv(synthetic / "test.csv", header=None)
+    subject = subject_of(train).iloc[0]
+    test.iloc[0, ORIG_COL] = f"{subject}-another-orig.png"
+
+    report = leakage_report(train, test)
+
+    assert report == dict(shared_scans=0, shared_subjects=1, shared_files=0,
+                          pairs_touching_a_file=0.0, identical_pairs=0)
 
 
 def test_leakage_report_detects_a_planted_leak(synthetic):
@@ -26,6 +36,7 @@ def test_tag_features_are_antisymmetric():
 
 
 def test_metadata_baseline_learns_the_synthetic_rule(synthetic):
+    pytest.importorskip("sklearn")
     # in the fake data the image with FEWER degradation tags always wins, so tags alone should predict well
     train = pd.read_csv(synthetic / "train.csv", header=None)
     test = pd.read_csv(synthetic / "test.csv", header=None)

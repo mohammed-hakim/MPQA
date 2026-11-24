@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from mpqa.cli import add_config_args, cfg_from_args  # noqa: E402
+from mpqa.analysis import leakage_report  # noqa: E402
 from mpqa.data import load_frames  # noqa: E402
 from mpqa.trainer import evaluate_checkpoint, print_report  # noqa: E402
 
@@ -22,9 +23,17 @@ def main():
     args = parser.parse_args()
     cfg = cfg_from_args(args)
 
-    _, val, test = load_frames(cfg)
+    train, val, test = load_frames(cfg)
+    eval_df = test if args.split == "test" else val
+    overlap = leakage_report(train, eval_df)
+    print(
+        f"train/{args.split} overlap: shared subjects={overlap['shared_subjects']}, "
+        f"shared scans={overlap['shared_scans']}, shared degraded files={overlap['shared_files']}, "
+        f"evaluation pairs touching a train file={overlap['pairs_touching_a_file']:.1f}%, "
+        f"identical pairs={overlap['identical_pairs']}"
+    )
     ckpt = args.ckpt or str(Path(cfg.out_dir) / "best.pth")
-    _, acc = evaluate_checkpoint(cfg, ckpt, df=test if args.split == "test" else val)
+    _, acc = evaluate_checkpoint(cfg, ckpt, df=eval_df)
     print_report(acc, title=args.split.upper())
 
 
