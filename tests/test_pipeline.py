@@ -50,6 +50,13 @@ def test_frames_have_no_leakage_and_drop_option(synthetic, tiny_cfg):
     assert len(cleaned) == len(leaky) - 6 and not shared_subjects(full, cleaned)
 
 
+def test_load_frames_reports_csv_overlap_details(tiny_cfg, capsys):
+    load_frames(tiny_cfg)
+
+    output = capsys.readouterr().out
+    assert "train-csv/test-csv overlap: subject IDs=0, scans=0, image files=0" in output
+
+
 def pathlib_out(cfg):
     from pathlib import Path
     return Path(cfg.out_dir)

@@ -8,6 +8,7 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
+from .analysis import leakage_report
 from .labels import (IMG1_COL, IMG2_COL, LABEL_COLS, drop_subjects, impact_label, shared_subjects,
                      signed_labels, subject_split)
 
@@ -63,7 +64,14 @@ def load_frames(cfg, verbose=True):
     if verbose:
         print(f"pairs  train={len(train)}  val={len(val)}  test={len(test)}", flush=True)
         if not cfg.drop_shared_subjects:
-            print(f"subject IDs shared by train-csv and test-csv: {len(shared)} (not a scan/file leakage check)", flush=True)
+            csv_overlap = leakage_report(full, test)
+            print(
+                f"train-csv/test-csv overlap: subject IDs={csv_overlap['shared_subjects']}, "
+                f"scans={csv_overlap['shared_scans']}, image files={csv_overlap['shared_files']}, "
+                f"test pairs touching a train file={csv_overlap['pairs_touching_a_file']:.1f}%, "
+                f"identical pairs={csv_overlap['identical_pairs']}",
+                flush=True,
+            )
     return train, val, test
 
 
